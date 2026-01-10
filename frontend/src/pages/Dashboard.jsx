@@ -1,5 +1,6 @@
 import Sidebar from "../components/Sidebar";
 import XPBar from "../components/XPBar";
+import "../styles/dashboard.css";
 
 export default function Dashboard() {
   return (

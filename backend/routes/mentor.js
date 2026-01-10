@@ -3,7 +3,8 @@ const router = express.Router();
 
 router.post("/", (req, res) => {
   res.json({
-    reply: "Check your loop condition 😊 Try using < instead of <="
+    reply:
+      "Think of a variable like a magic box 🪄 where you store values!",
   });
 });
 

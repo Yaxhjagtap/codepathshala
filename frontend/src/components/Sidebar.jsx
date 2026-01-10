@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-
+import "../styles/dashboard.css";
 export default function Sidebar() {
   return (
     <aside className="sidebar">

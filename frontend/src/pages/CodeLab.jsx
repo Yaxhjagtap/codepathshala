@@ -1,5 +1,6 @@
 import { runCode } from "../services/api";
 import { useState } from "react";
+import "../styles/dashboard.css";
 
 export default function CodeLab() {
   const [code, setCode] = useState("");

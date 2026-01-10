@@ -1,5 +1,6 @@
 import { askMentor } from "../services/api";
 import { useState } from "react";
+import "../styles/dashboard.css";
 
 export default function Mentor() {
   const [msg, setMsg] = useState("");
