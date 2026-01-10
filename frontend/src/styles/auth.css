@@ -1,0 +1,175 @@
+/* =========================
+   COSMIC PLAYGROUND THEME
+   ========================= */
+
+:root {
+  --purple: #6C63FF;
+  --purple-dark: #554EEB;
+  --orange: #FF9F1C;
+  --bg-soft: #F9FAFF;
+  --border-soft: #E6E9F5;
+  --text-dark: #0F172A;
+  --text-muted: #64748B;
+}
+
+.auth-page {
+  min-height: 100vh;
+  background: var(--bg-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Nunito', sans-serif;
+  position: relative;
+}
+
+/* Floating decorations (stars, moon vibes) */
+.auth-page::before,
+.auth-page::after {
+  content: "✨";
+  position: absolute;
+  font-size: 3rem;
+  opacity: 0.25;
+}
+
+.auth-page::before {
+  top: 10%;
+  left: 8%;
+}
+
+.auth-page::after {
+  bottom: 12%;
+  right: 10%;
+}
+
+/* =========================
+   CARD
+   ========================= */
+
+.auth-card {
+  background: white;
+  width: 100%;
+  max-width: 420px;
+  border-radius: 22px;
+  padding: 32px;
+  box-shadow: 0 30px 60px rgba(108, 99, 255, 0.15);
+  border: 1px solid var(--border-soft);
+}
+
+.auth-back {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+  cursor: pointer;
+}
+
+.auth-title {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 1.9rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text-dark);
+}
+
+.auth-subtitle {
+  text-align: center;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+
+/* =========================
+   AVATARS
+   ========================= */
+
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.avatar {
+  font-size: 2rem;
+  padding: 14px;
+  border-radius: 16px;
+  border: 2px solid transparent;
+  background: #F1F3FF;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.avatar:hover {
+  transform: translateY(-3px);
+}
+
+.avatar.selected {
+  border-color: var(--purple);
+  background: #E8E9FF;
+}
+
+/* =========================
+   INPUTS
+   ========================= */
+
+.auth-input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border-soft);
+  margin-bottom: 14px;
+  font-size: 0.95rem;
+}
+
+.auth-input:focus {
+  outline: none;
+  border-color: var(--purple);
+  box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.15);
+}
+
+/* =========================
+   BUTTON
+   ========================= */
+
+.auth-btn {
+  width: 100%;
+  background: linear-gradient(
+    135deg,
+    var(--purple),
+    var(--purple-dark)
+  );
+  color: white;
+  padding: 14px;
+  border-radius: 16px;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 8px 0 rgba(85, 78, 235, 0.6);
+  transition: all 0.15s ease;
+}
+
+.auth-btn:hover {
+  transform: translateY(-2px);
+}
+
+.auth-btn:active {
+  transform: translateY(4px);
+  box-shadow: 0 4px 0 rgba(85, 78, 235, 0.6);
+}
+
+/* =========================
+   SWITCH TEXT
+   ========================= */
+
+.auth-switch {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.auth-switch span {
+  color: var(--purple);
+  font-weight: 600;
+  cursor: pointer;
+}
