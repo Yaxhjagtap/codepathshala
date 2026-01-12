@@ -173,3 +173,108 @@
   font-weight: 600;
   cursor: pointer;
 }
+
+/* Age Selection Styles */
+.age-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.age-card {
+  border: 2px solid transparent;
+  border-radius: 15px;
+  padding: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: white;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+.age-card.selected {
+  border-color: #6c63ff;
+  box-shadow: 0 8px 25px rgba(108, 99, 255, 0.15);
+  transform: translateY(-5px);
+}
+
+.age-card:hover {
+  transform: translateY(-3px);
+}
+
+.age-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.age-info h4 {
+  margin: 0 0 5px;
+  font-size: 1rem;
+}
+
+.age-desc {
+  font-size: 0.85rem;
+  color: #666;
+  margin: 0;
+}
+
+.age-preview {
+  background: #f8f9ff;
+  border-radius: 15px;
+  padding: 20px;
+  margin: 20px 0;
+}
+
+.age-preview h4 {
+  margin: 0 0 15px;
+  color: #333;
+}
+
+.age-preview ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.age-preview li {
+  margin-bottom: 10px;
+  color: #555;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+}
+
+.quest-bullet {
+  margin-right: 10px;
+  font-size: 1.2rem;
+}
+
+.secondary-btn {
+  width: 100%;
+  background: transparent;
+  color: #6c63ff;
+  border: 2px solid #6c63ff;
+  padding: 12px;
+  border-radius: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.2s ease;
+}
+
+.secondary-btn:hover {
+  background: #6c63ff;
+  color: white;
+}
+
+/* Responsive for age grid */
+@media (max-width: 480px) {
+  .age-grid {
+    grid-template-columns: 1fr;
+  }
+}

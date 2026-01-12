@@ -1,5 +1,4 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -8,7 +7,7 @@ import QuestMap from "./pages/QuestMap";
 import CodeLab from "./pages/CodeLab";
 import Mentor from "./pages/Mentor";
 import Avatar from "./pages/Avatar";
-import LeaderboardPage from "./pages/LeaderboardPage";
+import LeaderboardPage from "./pages/LeaderboardPage"; // Fixed import
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./styles/dashboard.css";

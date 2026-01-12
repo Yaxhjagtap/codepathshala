@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebase/auth";
+import { auth, db } from "../firebase/auth"; // Update this import too
+import { doc, updateDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import "../styles/auth.css";
 
@@ -11,7 +12,14 @@ export default function Login() {
 
   const login = async () => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      
+      // Update last login time
+      await updateDoc(doc(db, "users", user.uid), {
+        lastLogin: new Date()
+      });
+      
       navigate("/dashboard");
     } catch {
       alert("Invalid credentials");
@@ -32,8 +40,10 @@ export default function Login() {
 
         <input
           className="auth-input"
-          placeholder="Email or username"
+          placeholder="Email"
+          type="email"
           onChange={(e) => setEmail(e.target.value)}
+          value={email}
         />
 
         <input
@@ -41,6 +51,7 @@ export default function Login() {
           className="auth-input"
           placeholder="Password"
           onChange={(e) => setPassword(e.target.value)}
+          value={password}
         />
 
         <button className="auth-btn" onClick={login}>
