@@ -7,10 +7,12 @@ import QuestMap from "./pages/QuestMap";
 import CodeLab from "./pages/CodeLab";
 import Mentor from "./pages/Mentor";
 import Avatar from "./pages/Avatar";
-import LeaderboardPage from "./pages/LeaderboardPage"; // Fixed import
-
+import LeaderboardPage from "./pages/LeaderboardPage";
+import Labs from "./components/Labs";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./styles/dashboard.css";
+import "./styles/codelab.css";
+import "./styles/labs.css";
 
 export default function App() {
   return (
@@ -45,6 +47,15 @@ export default function App() {
           element={
             <ProtectedRoute>
               <CodeLab />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/labs"
+          element={
+            <ProtectedRoute>
+              <Labs />
             </ProtectedRoute>
           }
         />

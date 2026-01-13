@@ -556,6 +556,8 @@ export default function Dashboard() {
             className="action-btn"
             onClick={() => navigate("/avatar")}
           >
+
+          
             <span className="action-icon">👤</span>
             <div className="action-content">
               <strong>My Avatar</strong>

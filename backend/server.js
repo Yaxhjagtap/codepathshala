@@ -16,7 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 // Create temp directory if it doesn't exist
 const tempDir = path.join(__dirname, 'temp');
 if (!fs.existsSync(tempDir)) {
-  fs.mkdirSync(tempDir);
+  fs.mkdirSync(tempDir, { recursive: true });
 }
 
 // Clean temp directory every hour
@@ -26,12 +26,16 @@ setInterval(() => {
     
     files.forEach(file => {
       const filePath = path.join(tempDir, file);
-      const stat = fs.statSync(filePath);
-      const now = new Date().getTime();
-      const endTime = new Date(stat.ctime).getTime() + 3600000; // 1 hour
-      
-      if (now > endTime) {
-        fs.unlinkSync(filePath);
+      try {
+        const stat = fs.statSync(filePath);
+        const now = new Date().getTime();
+        const endTime = new Date(stat.ctime).getTime() + 3600000; // 1 hour
+        
+        if (now > endTime) {
+          fs.unlinkSync(filePath);
+        }
+      } catch (e) {
+        // Ignore errors
       }
     });
   });
@@ -51,15 +55,6 @@ const runCode = (language, code, timeout = 10000) => {
 // Safe execution wrapper
 (function() {
   "use strict";
-  
-  // Block dangerous functions
-  const blocked = ['eval', 'Function', 'process', 'require', 'global', 'module', 'exports', '__dirname', '__filename'];
-  blocked.forEach(name => {
-    Object.defineProperty(globalThis, name, {
-      get: () => { throw new Error('${name} is not allowed'); },
-      configurable: false
-    });
-  });
   
   // Override console methods
   const logs = [];
@@ -88,58 +83,89 @@ const runCode = (language, code, timeout = 10000) => {
 })();
       `;
       
-      fs.writeFileSync(tempFile, safeCode);
+      fs.writeFileSync(tempFile, safeCode, 'utf8');
       
       exec(`node "${tempFile}"`, { timeout }, (error, stdout, stderr) => {
         // Clean up
-        if (fs.existsSync(tempFile)) {
-          fs.unlinkSync(tempFile);
+        try {
+          if (fs.existsSync(tempFile)) {
+            fs.unlinkSync(tempFile);
+          }
+        } catch (e) {
+          // Ignore cleanup errors
         }
         
         if (error) {
-          resolve({ output: `Error: ${error.message}`, success: false });
+          resolve({ success: false, output: `Error: ${error.message}` });
         } else if (stderr) {
-          resolve({ output: `Error: ${stderr}`, success: false });
+          resolve({ success: false, output: `Error: ${stderr}` });
         } else {
-          resolve({ output: stdout || 'Code executed successfully! (No output)', success: true });
+          resolve({ success: true, output: stdout || 'Code executed successfully! (No output)' });
         }
       });
       
     } else if (language === 'python') {
       tempFile = path.join(tempDir, `${id}.py`);
       
-      // Add safety measures for Python
-      const safeCode = `import sys
-import os
-
-# Block dangerous modules
-dangerous_modules = ['os', 'sys', 'subprocess', 'shutil', 'socket']
-for mod in dangerous_modules:
-    sys.modules[mod] = None
-
-# Safe execution
-try:
-${code.split('\n').map(line => '    ' + line).join('\n')}
-except Exception as e:
-    print(f"[ERROR]: {str(e)}")
-`;
+      // Simple Python execution without heavy restrictions for learning
+      const safeCode = code;
       
-      fs.writeFileSync(tempFile, safeCode);
+      fs.writeFileSync(tempFile, safeCode, 'utf8');
       
-      exec(`python3 "${tempFile}"`, { timeout }, (error, stdout, stderr) => {
-        // Clean up
-        if (fs.existsSync(tempFile)) {
-          fs.unlinkSync(tempFile);
+      // For Windows, try python, then py
+      const commands = [
+        'python',    // Most common on Windows
+        'py',        // Python launcher on Windows
+        'python3'    // Some systems have python3
+      ];
+      
+      let currentCommandIndex = 0;
+      
+      const tryNextCommand = () => {
+        if (currentCommandIndex >= commands.length) {
+          // Clean up and return error
+          try {
+            if (fs.existsSync(tempFile)) {
+              fs.unlinkSync(tempFile);
+            }
+          } catch (e) {
+            // Ignore cleanup errors
+          }
+          
+          resolve({ 
+            success: false, 
+            output: `Python is not installed or not in PATH.\n\nPlease install Python from https://www.python.org/downloads/\nMake sure to check "Add Python to PATH" during installation.` 
+          });
+          return;
         }
         
-        if (error) {
-          resolve({ output: `Error: ${error.message}`, success: false });
-        } else if (stderr) {
-          resolve({ output: `Error: ${stderr}`, success: false });
-        } else {
-          resolve({ output: stdout || 'Code executed successfully! (No output)', success: true });
-        }
-      });
+        const command = commands[currentCommandIndex];
+        currentCommandIndex++;
+        
+        exec(`${command} "${tempFile}"`, { timeout }, (error, stdout, stderr) => {
+          if (error) {
+            // Try next command
+            tryNextCommand();
+          } else {
+            // Clean up
+            try {
+              if (fs.existsSync(tempFile)) {
+                fs.unlinkSync(tempFile);
+              }
+            } catch (e) {
+              // Ignore cleanup errors
+            }
+            
+            if (stderr) {
+              resolve({ success: false, output: `Error: ${stderr}` });
+            } else {
+              resolve({ success: true, output: stdout || 'Code executed successfully! (No output)' });
+            }
+          }
+        });
+      };
+      
+      tryNextCommand();
     } else {
       reject(new Error('Unsupported language'));
     }
@@ -159,7 +185,9 @@ app.post('/api/run', async (req, res) => {
       return res.status(400).json({ error: 'Unsupported language' });
     }
     
+    console.log(`Running ${language} code...`);
     const result = await runCode(language, code);
+    console.log(`Result: ${result.success ? 'Success' : 'Error'}`);
     res.json(result);
     
   } catch (error) {
@@ -172,7 +200,13 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Code execution server is running' });
 });
 
+// Serve static files from the frontend
+app.use(express.static(path.join(__dirname, '../public')));
+
 // Start server
 app.listen(PORT, () => {
-  console.log(`Code execution server running on port ${PORT}`);
+  console.log(`✅ Code execution server running on http://localhost:${PORT}`);
+  console.log('📝 Endpoints:');
+  console.log('  POST /api/run - Execute code');
+  console.log('  GET  /api/health - Health check');
 });

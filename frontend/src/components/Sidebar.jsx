@@ -12,9 +12,25 @@ export default function Sidebar() {
       <NavLink to="/quests">
         <span>🗺️</span> Quest Map
       </NavLink>
-      <NavLink to="/code">
-        <span>💻</span> Code Lab
-      </NavLink>
+       <NavLink 
+          to="/labs" 
+          className={({ isActive }) => 
+            `nav-item ${isActive ? "active" : ""}`
+          }
+        >
+          <span className="nav-icon">🧪</span>
+          <span className="nav-text">Coding Labs</span>
+        </NavLink>
+        
+        <NavLink 
+          to="/code" 
+          className={({ isActive }) => 
+            `nav-item ${isActive ? "active" : ""}`
+          }
+        >
+          <span className="nav-icon">💻</span>
+          <span className="nav-text">Code editor</span>
+        </NavLink>
       <NavLink to="/leaderboard">
         <span>🏆</span> Leaderboard
       </NavLink>
