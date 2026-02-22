@@ -36,7 +36,6 @@ export default function LeaderboardPage() {
   const fetchLeaderboard = async (userId) => {
     setLoading(true);
     try {
-      // Fetch all users ordered by XP
       const usersQuery = query(
         collection(db, "users"),
         orderBy("xp", "desc"),
@@ -50,10 +49,8 @@ export default function LeaderboardPage() {
         ...doc.data()
       }));
 
-      // Filter by age group on client side if needed
       if (ageFilter !== "all") {
         leaderboardData = leaderboardData.filter(player => player.ageGroup === ageFilter);
-        // Recalculate ranks
         leaderboardData = leaderboardData.map((player, index) => ({
           ...player,
           rank: index + 1
@@ -62,14 +59,13 @@ export default function LeaderboardPage() {
       
       setLeaderboard(leaderboardData);
       
-      // Find user's rank
       const userIndex = leaderboardData.findIndex(player => player.id === userId);
       if (userIndex !== -1) {
         setUserRank(leaderboardData[userIndex]);
       }
     } catch (error) {
       console.error("Error fetching leaderboard:", error);
-      // Fallback to mock data for testing
+      // Fallback to mock data to prevent breaking the UI if permissions are missing
       setLeaderboard([
         { id: "1", rank: 1, username: "WizardKing", avatar: "🧙‍♂️", xp: 5000, level: 5, ageGroup: "9-11", completedQuests: 25, totalQuests: 30, streak: 7 },
         { id: "2", rank: 2, username: "CodeMaster", avatar: "🤖", xp: 4500, level: 5, ageGroup: "12-14", completedQuests: 22, totalQuests: 30, streak: 5 },
@@ -114,7 +110,6 @@ export default function LeaderboardPage() {
     <div className="layout">
       <Sidebar />
       <main className="leaderboard-main">
-        {/* Header with Back Button */}
         <div className="leaderboard-header">
           <button 
             className="back-button"
@@ -128,7 +123,6 @@ export default function LeaderboardPage() {
           </div>
         </div>
 
-        {/* Age Filters */}
         <div className="age-filters">
           <button 
             className={`filter-btn ${ageFilter === "all" ? "active" : ""}`}
@@ -147,7 +141,6 @@ export default function LeaderboardPage() {
           ))}
         </div>
 
-        {/* User's Rank Card */}
         {userRank && (
           <div className="user-rank-card">
             <h3>Your Position</h3>
@@ -168,7 +161,6 @@ export default function LeaderboardPage() {
           </div>
         )}
 
-        {/* Leaderboard Table */}
         <div className="leaderboard-table-container">
           <div className="table-header">
             <div className="rank-col">Rank</div>
@@ -250,7 +242,6 @@ export default function LeaderboardPage() {
           )}
         </div>
 
-        {/* Stats Summary */}
         {leaderboard.length > 0 && (
           <div className="leaderboard-stats">
             <div className="stat-card">

@@ -74,7 +74,6 @@ export default function QuestMap() {
 
   const fetchUserData = async (userId) => {
     try {
-      // Fetch user document
       const userDocRef = doc(db, "users", userId);
       const userDocSnap = await getDoc(userDocRef);
       
@@ -82,17 +81,20 @@ export default function QuestMap() {
         const data = userDocSnap.data();
         setUserData(data);
 
-        // Fetch quests for user
-        const questsQuery = query(
-          collection(db, "users", userId, "quests"),
-          orderBy("order")
-        );
-        const questsSnapshot = await getDocs(questsQuery);
-        const questsData = questsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setQuests(questsData);
+        try {
+          const questsQuery = query(
+            collection(db, "users", userId, "quests"),
+            orderBy("order")
+          );
+          const questsSnapshot = await getDocs(questsQuery);
+          const questsData = questsSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          setQuests(questsData);
+        } catch (questError) {
+          console.error("Error fetching quests:", questError);
+        }
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -105,13 +107,11 @@ export default function QuestMap() {
     const world = worlds.find(w => w.id === worldId);
     if (userData.xp >= world.unlockXP) {
       try {
-        // Add world to unlocked worlds
         const unlockedWorlds = [...(userData.unlockedWorlds || []), worldId];
         await updateDoc(doc(db, "users", user.uid), {
           unlockedWorlds: unlockedWorlds
         });
         
-        // Add quests for the new world
         const newQuests = getWorldQuests(worldId, userData.ageGroup);
         for (const quest of newQuests) {
           await updateDoc(doc(db, "users", user.uid, "quests", quest.id), {

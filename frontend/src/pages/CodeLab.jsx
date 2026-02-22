@@ -58,44 +58,34 @@ const starterTemplates = {
 // Lab completion checkers
 const labCheckers = {
   "lab_1": (code) => {
-    // Check if contains print statement
     return code.includes('print(') || code.includes('print (');
   },
   "lab_2": (code) => {
-    // Check if contains variable assignment
     return (code.includes('=') && (code.includes('let ') || code.includes('var ') || code.includes('const ') || 
             (code.includes(' = ') && !code.includes('=='))));
   },
   "lab_3": (code) => {
-    // Check if contains function definition
     return code.includes('function ') || code.includes('def ') || code.includes('() =>');
   },
   "lab_4": (code) => {
-    // Check if contains HTML structure
     return code.includes('<!DOCTYPE html>') || code.includes('<html>');
   },
   "lab_5": (code) => {
-    // Check if contains CSS styling
     return code.includes('style') || code.includes('color:') || code.includes('background:');
   },
   "lab_6": (code) => {
-    // Check if contains animation
     return code.includes('@keyframes') || code.includes('animation:') || code.includes('transition:');
   },
   "lab_7": (code) => {
-    // Check if contains array or object
     return code.includes('[') && code.includes(']') || code.includes('{') && code.includes('}');
   },
   "lab_8": (code) => {
-    // Check if contains responsive design
     return code.includes('@media') || code.includes('max-width') || code.includes('min-width');
   },
   "lab_9": (code) => {
-    // Check if contains class definition
     return code.includes('class ') || code.includes('this.') || code.includes('constructor');
   },
   "lab_10": (code) => {
-    // Check if contains interactive elements
     return code.includes('onclick') || code.includes('addEventListener') || code.includes('click');
   }
 };
@@ -124,7 +114,7 @@ export default function CodeLab() {
   const navigate = useNavigate();
   const location = useLocation();
   const outputIframeRef = useRef(null);
-  const blocklyGeneratedCodeRef = useRef(""); // Track Blockly generated code
+  const blocklyGeneratedCodeRef = useRef(""); 
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -132,13 +122,11 @@ export default function CodeLab() {
       if (currentUser) {
         await fetchUserData(currentUser.uid);
         
-        // Check if we have lab data from navigation
         if (location.state?.lab) {
           const lab = location.state.lab;
           setCurrentLab(lab);
           setLanguage(lab.language);
           
-          // Load appropriate template
           if (lab.language === "web") {
             setWebCode({
               html: lab.template?.html || starterTemplates.web.basic.html,
@@ -149,7 +137,6 @@ export default function CodeLab() {
             setCode(lab.template || starterTemplates[lab.language]?.basic || "");
           }
           
-          // Save that user started this lab
           await saveLabStart(currentUser.uid, lab);
         }
         
@@ -162,7 +149,6 @@ export default function CodeLab() {
       setLoading(false);
     });
 
-    // Load starter template if no lab is active
     if (!location.state?.lab) {
       if (language === "web") {
         setWebCode(starterTemplates.web.basic);
@@ -259,7 +245,6 @@ export default function CodeLab() {
     if (!user) return;
     
     try {
-      // Mark lab as completed
       await setDoc(doc(db, "users", user.uid, "completedLabs", lab.id), {
         labId: lab.id,
         title: lab.title,
@@ -269,26 +254,22 @@ export default function CodeLab() {
         ageGroup: userData?.ageGroup
       });
 
-      // Update user XP
       await updateDoc(doc(db, "users", user.uid), {
         xp: increment(lab.xpReward),
         lastActive: new Date(),
         completedQuests: increment(1)
       });
 
-      // Update leaderboard
       await updateDoc(doc(db, "leaderboard", user.uid), {
         xp: increment(lab.xpReward)
       });
 
-      // Remove from progress collection
       const progressRef = doc(db, "users", user.uid, "labProgress", lab.id);
       await setDoc(progressRef, {
         completed: true,
         completedAt: new Date()
       }, { merge: true });
 
-      // Add activity
       const activityId = Date.now().toString();
       await setDoc(doc(db, "users", user.uid, "activities", activityId), {
         type: "lab_completed",
@@ -313,10 +294,8 @@ export default function CodeLab() {
     if (language === "web") {
       codeToRun = JSON.stringify(webCode);
     } else {
-      // Use Blockly generated code if in Blockly mode, otherwise use text editor code
       if (language === "python" && editorMode === "blockly") {
         codeToRun = blocklyGeneratedCodeRef.current || code;
-        // Also update the code state with blockly code
         if (blocklyGeneratedCodeRef.current && !code.trim()) {
           setCode(blocklyGeneratedCodeRef.current);
         }
@@ -339,41 +318,38 @@ export default function CodeLab() {
       let result;
       
       if (language === "python") {
-        // Use external server for Python
         result = await runPythonOnServer(codeToRun);
       } else if (language === "web") {
-        // Combine HTML, CSS, JS
         result = await runCombinedCode(webCode.html, webCode.css, webCode.js);
       } else {
-        // Use browser runner for other languages
         result = await runCodeInBrowser(codeToRun, language);
       }
       
       if (result.success) {
-        // Save activity to Firebase
-        const activityId = Date.now().toString();
-        
-        await setDoc(doc(db, "users", user.uid, "activities", activityId), {
-          type: "code_run",
-          title: `Ran ${language} code in Code Lab`,
-          xp: 10,
-          language: language,
-          timestamp: new Date(),
-          success: true
-        });
+        try {
+          const activityId = Date.now().toString();
+          
+          await setDoc(doc(db, "users", user.uid, "activities", activityId), {
+            type: "code_run",
+            title: `Ran ${language} code in Code Lab`,
+            xp: 10,
+            language: language,
+            timestamp: new Date(),
+            success: true
+          });
 
-        // Update user XP
-        await updateDoc(doc(db, "users", user.uid), {
-          xp: increment(10),
-          lastActive: new Date()
-        });
+          await updateDoc(doc(db, "users", user.uid), {
+            xp: increment(10),
+            lastActive: new Date()
+          });
+        } catch (e) {
+          console.error("Failed to update activity/xp - Check permissions", e);
+        }
 
-        // Check lab completion if this is from a lab
         if (currentLab) {
           const newProgress = Math.min((currentLab.progress || 0) + 25, 100);
           await updateLabProgress(currentLab.id, newProgress);
           
-          // Check if lab requirements are met
           const completed = await checkLabCompletion(currentLab, codeToRun);
           if (completed) {
             result.output += `\n\n🎉 LAB COMPLETED! +${currentLab.xpReward} XP!`;
@@ -384,13 +360,12 @@ export default function CodeLab() {
 
         result.output += `\n\n✅ +10 XP for running code!`;
         
-        // Set output based on type
         if (result.isHtml || language === "html" || language === "css" || language === "web") {
           setOutput({
             type: 'html',
             content: result.output,
             console: result.output.includes('🎉') ? result.output : 'Web content rendered below.',
-            htmlContent: result.output // Store HTML content separately
+            htmlContent: result.output
           });
         } else {
           setOutput({
@@ -442,7 +417,6 @@ export default function CodeLab() {
       if (language === "web") {
         saveData.webCode = webCode;
       } else {
-        // Save the actual generated code from Blockly if in Blockly mode
         if (language === "python" && editorMode === "blockly") {
           saveData.code = blocklyGeneratedCodeRef.current || code;
         } else {
@@ -460,7 +434,7 @@ export default function CodeLab() {
       alert("Code saved successfully! ✨");
     } catch (error) {
       console.error("Error saving code:", error);
-      alert("Error saving code!");
+      alert("Error saving code! Please check your permissions.");
     } finally {
       setIsSaving(false);
     }
@@ -485,7 +459,6 @@ export default function CodeLab() {
   };
 
   const handleBlocklyCodeChange = (newCode) => {
-    // Update the ref and also the code state
     blocklyGeneratedCodeRef.current = newCode;
     setCode(newCode);
   };
@@ -520,10 +493,8 @@ export default function CodeLab() {
     }
   };
 
-  // Full Screen Preview Component
   const FullScreenPreview = () => {
     useEffect(() => {
-      // Add styles to body when fullscreen is open
       document.body.style.overflow = 'hidden';
       return () => {
         document.body.style.overflow = 'auto';
@@ -577,7 +548,6 @@ export default function CodeLab() {
     <div className="layout">
       <Sidebar />
       <main className="codelab-main">
-        {/* Header */}
         <div className="codelab-header">
           <button 
             className="back-button"
@@ -593,7 +563,6 @@ export default function CodeLab() {
           </div>
         </div>
 
-        {/* Lab Info Bar */}
         {currentLab && (
           <div className="lab-info-bar">
             <div className="lab-info-content">
@@ -633,7 +602,6 @@ export default function CodeLab() {
           </div>
         )}
 
-        {/* Quest Info Bar */}
         {currentQuest && !currentLab && (
           <div className="quest-info-bar">
             <div className="quest-info-content">
@@ -654,7 +622,6 @@ export default function CodeLab() {
           </div>
         )}
 
-        {/* Lab Completion Message */}
         {showLabCheck && (
           <div className={`lab-check-message ${labCompleted ? 'success' : 'warning'}`}>
             {labCompleted ? (
@@ -671,7 +638,6 @@ export default function CodeLab() {
           </div>
         )}
 
-        {/* Language Selector */}
         <div className="language-selector-bar">
           {languages.map(lang => (
             <button
@@ -693,7 +659,6 @@ export default function CodeLab() {
           ))}
         </div>
 
-        {/* Editor Mode Toggle - Only for Python */}
         {supportsBlockly && (
           <div className="editor-mode-toggle">
             <button
@@ -711,7 +676,6 @@ export default function CodeLab() {
           </div>
         )}
 
-        {/* Template Selector */}
         {!currentLab && (
           <div className="template-selector-bar">
             <h4>Start with a template:</h4>
@@ -729,9 +693,7 @@ export default function CodeLab() {
           </div>
         )}
 
-        {/* Main Editor Area */}
         <div className="codelab-container">
-          {/* Editor Panel */}
           <div className="editor-panel">
             <div className="editor-header">
               <div className="editor-info">
@@ -793,7 +755,6 @@ export default function CodeLab() {
             </div>
           </div>
 
-          {/* Output Panel */}
           <div className="output-panel">
             <div className="output-header">
               <h3>📤 Output</h3>
@@ -851,7 +812,6 @@ export default function CodeLab() {
               )}
             </div>
             
-            {/* Tips Section */}
             <div className="tips-section">
               <h4>💡 Tips for Young Coders:</h4>
               <ul>
@@ -863,7 +823,6 @@ export default function CodeLab() {
               </ul>
             </div>
 
-            {/* Quick Actions */}
             <div className="quick-actions">
               <button 
                 className="action-btn"
@@ -917,7 +876,6 @@ export default function CodeLab() {
           </div>
         </div>
 
-        {/* Code Examples */}
         {!currentLab && (
           <div className="examples-section">
             <h3>Try These Examples:</h3>
@@ -1002,7 +960,6 @@ export default function CodeLab() {
         )}
       </main>
 
-      {/* Full Screen Preview Modal */}
       {showFullScreenPreview && <FullScreenPreview />}
     </div>
   );

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../firebase/auth";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { 
   doc, 
   getDoc, 
@@ -41,20 +41,22 @@ export default function Dashboard() {
   }, []);
 
   const fetchAllUserData = async (userId) => {
+    // 1. Fetch User Data
     try {
-      // Fetch user document
       const userDocRef = doc(db, "users", userId);
       const userDocSnap = await getDoc(userDocRef);
       
       if (userDocSnap.exists()) {
         const data = userDocSnap.data();
         setUserData(data);
-        
-        // Update streak if last login was yesterday
         await updateStreak(userId, data);
       }
+    } catch (error) {
+      console.error("Error fetching user document:", error);
+    }
 
-      // Fetch user's quests
+    // 2. Fetch Quests
+    try {
       const questsQuery = query(
         collection(db, "users", userId, "quests"),
         orderBy("order")
@@ -65,8 +67,12 @@ export default function Dashboard() {
         ...doc.data()
       }));
       setQuests(questsData);
+    } catch (error) {
+      console.error("Error fetching quests:", error);
+    }
 
-      // Fetch user's recent activities
+    // 3. Fetch Activities
+    try {
       const activitiesQuery = query(
         collection(db, "users", userId, "activities"),
         orderBy("timestamp", "desc"),
@@ -79,8 +85,12 @@ export default function Dashboard() {
         timestamp: doc.data().timestamp?.toDate() || new Date()
       }));
       setActivities(activitiesData);
+    } catch (error) {
+      console.error("Error fetching activities:", error);
+    }
 
-      // Fetch global leaderboard from users collection
+    // 4. Fetch Leaderboard
+    try {
       const usersQuery = query(
         collection(db, "users"),
         orderBy("xp", "desc"),
@@ -92,9 +102,8 @@ export default function Dashboard() {
         ...doc.data()
       }));
       setLeaderboard(usersData);
-
     } catch (error) {
-      console.error("Error fetching user data:", error);
+      console.error("Error fetching leaderboard:", error);
     }
   };
 
@@ -111,14 +120,11 @@ export default function Dashboard() {
       let newStreak = userData.streak || 0;
       
       if (diffDays === 1) {
-        // Consecutive day
         newStreak += 1;
       } else if (diffDays > 1) {
-        // Streak broken
         newStreak = 1;
       }
       
-      // Update streak
       await updateDoc(doc(db, "users", userId), {
         streak: newStreak,
         lastLogin: now
@@ -139,14 +145,21 @@ export default function Dashboard() {
         startedAt: new Date()
       });
       
-      // Refresh data
       await fetchAllUserData(user.uid);
-      
-      // Navigate to Code Lab with quest
       navigate("/code", { state: { questId } });
     } catch (error) {
       console.error("Error starting quest:", error);
       alert("Error starting quest. Please try again.");
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate("/login");
+    } catch (error) {
+      console.error("Error logging out:", error);
+      alert("Failed to log out. Please try again.");
     }
   };
 
@@ -248,7 +261,6 @@ export default function Dashboard() {
       <Sidebar />
       
       <main>
-        {/* User Welcome Section */}
         <div className="user-header">
           <div className="user-avatar-large">
             <span className="avatar-emoji">
@@ -273,16 +285,23 @@ export default function Dashboard() {
               {getAgeBasedMessage(userData?.ageGroup)}
             </p>
           </div>
+          <div className="header-actions" style={{ marginLeft: "auto" }}>
+            <button 
+              className="secondary-btn" 
+              onClick={handleLogout}
+              style={{ display: "flex", alignItems: "center", gap: "8px" }}
+            >
+              🚪 Logout
+            </button>
+          </div>
         </div>
 
-        {/* XP Progress */}
         <XPBar 
           current={userData?.xp || 0} 
           total={calculateTotalXPForLevel(userData?.level || 1)}
           level={userData?.level || 1}
         />
 
-        {/* Stats Grid */}
         <div className="stats-grid">
           <div className="stat-card" onClick={() => navigate("/quests")}>
             <div className="stat-icon">🏆</div>
@@ -329,7 +348,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Next World Unlock */}
         {nextWorld && (
           <div className="world-unlock-card">
             <div className="world-unlock-info">
@@ -356,7 +374,6 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Current Quest Section */}
         {currentQuest ? (
           <section className="card">
             <div className="quest-header">
@@ -413,7 +430,6 @@ export default function Dashboard() {
           </section>
         )}
 
-        {/* Recent Activity */}
         <section className="card">
           <div className="section-header">
             <h3>Recent Activity</h3>
@@ -468,7 +484,6 @@ export default function Dashboard() {
           </div>
         </section>
 
-        {/* Top of Leaderboard Preview */}
         <section className="card">
           <div className="section-header">
             <h3>🏆 Leaderboard Top 3</h3>
@@ -480,35 +495,38 @@ export default function Dashboard() {
             </button>
           </div>
           <div className="leaderboard-preview">
-            {leaderboard.slice(0, 3).map((player, index) => (
-              <div 
-                key={player.id} 
-                className={`leaderboard-item ${player.id === user.uid ? "current-user" : ""}`}
-                onClick={() => player.id === user.uid ? navigate("/avatar") : null}
-              >
-                <div className="leaderboard-rank">
-                  {index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"}
-                </div>
-                <div className="leaderboard-avatar">
-                  {player.avatar || "🧙‍♂️"}
-                </div>
-                <div className="leaderboard-info">
-                  <strong>{player.username || "Player"}</strong>
-                  <div className="leaderboard-meta">
-                    <span>Level {player.level || 1}</span>
-                    <span className="leaderboard-age">
-                      {getAgeGroupLabel(player.ageGroup)}
-                    </span>
+            {leaderboard.length > 0 ? (
+              leaderboard.slice(0, 3).map((player, index) => (
+                <div 
+                  key={player.id} 
+                  className={`leaderboard-item ${player.id === user.uid ? "current-user" : ""}`}
+                  onClick={() => player.id === user.uid ? navigate("/avatar") : null}
+                >
+                  <div className="leaderboard-rank">
+                    {index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"}
+                  </div>
+                  <div className="leaderboard-avatar">
+                    {player.avatar || "🧙‍♂️"}
+                  </div>
+                  <div className="leaderboard-info">
+                    <strong>{player.username || "Player"}</strong>
+                    <div className="leaderboard-meta">
+                      <span>Level {player.level || 1}</span>
+                      <span className="leaderboard-age">
+                        {getAgeGroupLabel(player.ageGroup)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="leaderboard-xp">
+                    {player.xp?.toLocaleString() || 0} XP
                   </div>
                 </div>
-                <div className="leaderboard-xp">
-                  {player.xp?.toLocaleString() || 0} XP
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p>Leaderboard loading or unavailable.</p>
+            )}
           </div>
           
-          {/* User's position if not in top 3 */}
           {leaderboard.findIndex(p => p.id === user.uid) >= 3 && (
             <div className="user-position">
               <div className="position-info">
@@ -520,7 +538,6 @@ export default function Dashboard() {
           )}
         </section>
 
-        {/* Quick Actions */}
         <div className="quick-actions">
           <button 
             className="action-btn"
@@ -556,8 +573,6 @@ export default function Dashboard() {
             className="action-btn"
             onClick={() => navigate("/avatar")}
           >
-
-          
             <span className="action-icon">👤</span>
             <div className="action-content">
               <strong>My Avatar</strong>
